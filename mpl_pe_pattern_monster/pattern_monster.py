@@ -16,20 +16,25 @@ class FillPattern(AbstractPathEffect):
     Fill the path with the given pattern.
     """
 
-    def __init__(self, pattern, ax, color_cycle=None):
+    def __init__(self, pattern, ax, color_cycle=None, alpha=None):
         """
 
         Keyword Arguments:
+
+        alpha: alpha value for the pattern. If None, the alpha value from the parent artist
+               will be used.
         """
 
         self.pb = PatternBox(pattern, extent=None, bbox=None, coords="figure pixels", axes=ax,
                              color_cycle=color_cycle)
+        self._alpha = alpha
 
     def draw_path(self, renderer, gc, tpath, affine, rgbFace):
 
         bbox = tpath.get_extents(affine)
         self.pb.set_bbox(bbox)
         self.pb.set_clip_path(tpath, transform=affine)
+        self.pb.set_alpha(gc.get_alpha() if self._alpha is None else self._alpha)
         self.pb.draw(renderer)
         # FIXME we may better recover the clip_path?
 
@@ -43,13 +48,13 @@ class Pattern:
         self.pathlist = [type(p)(vertices=p.vertices*scale,
                                  codes=p.codes) for p in pathlist]
 
-    def fill(self, ax, color_cycle=None):
+    def fill(self, ax, color_cycle=None, alpha=None):
         if color_cycle is not None:
             # We cache the colors in case color_cycle is a generator.
             color_cycle = [c for _, c in zip(self.pathlist, color_cycle)]
 
         return FillPattern(self, ax,
-                           color_cycle=color_cycle)
+                           color_cycle=color_cycle, alpha=alpha)
 
 
 class PatternBox(Artist):
@@ -101,6 +106,7 @@ class PatternBox(Artist):
 
         gc = renderer.new_gc()
         self._set_gc_clip(gc)
+        gc.set_alpha(self.get_alpha())
         gc.set_url(self.get_url())
 
         tr = TR.get_xy_transform(renderer, self.coords, axes=self.axes)
@@ -120,8 +126,7 @@ class PatternBox(Artist):
         offsets = [(x0+w*ix, y0+h*iy) for ix in range(nx) for iy in range(ny)]
         for p, fc in zip(self.pattern.pathlist, self.color_cycle):
 
-            rgba = mcolors.to_rgba(fc)
-            gc.set_foreground("k")
+            rgb = mcolors.to_rgb(fc)
 
             # FIXME: for now, the pattern will be drawn in the pixel
             # coordinate, so the pattern will be dependent of dpi used.
@@ -134,7 +139,7 @@ class PatternBox(Artist):
                   _transforms, # all trans
                   np.array(offsets),
                   Affine2D().frozen(), # offset trans
-                  np.array([rgba]), [], # face & edge
+                  np.array([rgb]), [], # face & edge
                   [], [], # lw, ls
                   [], [], #
                   None)
@@ -174,6 +179,7 @@ class PatternMonster:
         self._slugs, self.roots, self.tags, self.names = slugs, roots, tags, names
 
     def get(self, slug, scale=1):
+        "return an instance of pattern of a given slug name."
         j1 = self._slugs[slug]
 
         slug = j1["slug"].replace("-", "_")
