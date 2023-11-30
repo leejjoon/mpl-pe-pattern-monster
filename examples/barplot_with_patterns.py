@@ -1,9 +1,10 @@
 
 import matplotlib.pyplot as plt
+from matplotlib.patheffects import Normal
 import numpy as np
-import mpl_visual_context.patheffects as pe
 from mpl_pe_pattern_monster import PatternMonster
 
+# 
 species = ("Adelie", "Chinstrap", "Gentoo")
 penguin_means = {
     'Bill Depth': (18.35, 18.43, 14.98),
@@ -19,7 +20,7 @@ fig, ax = plt.subplots(num=1, clear=True, figsize=(8, 6))
 
 for attribute, measurement in penguin_means.items():
     offset = width * multiplier
-    rects = ax.bar(x + offset, measurement, width*0.8, label=attribute)
+    rects = ax.bar(x + offset, measurement, width*0.8, label=attribute, alpha=0.2)
     ax.bar_label(rects, padding=3)
     multiplier += 1
 
@@ -34,16 +35,19 @@ color_cycle = itertools.cycle(["#805AD5", "#E91E63", "#03A9F4", "#ECC94B"])
 
 pm = PatternMonster()
 
-for bars, slug in zip(ax.containers, ["circles-5", "circles-6", "concentric-circles-2"]):
-    pattern = pm.get(slug, scale=2)
-    pattern_fill = pattern.fill(ax, color_cycle)
-    for patch in bars:
-        patch.set_path_effects([
-            pe.GCModify(alpha=0.1) | pe.FillOnly(),
-            pattern_fill,
-            pe.GCModify(linewidth=1) | pe.StrokeColorFromFillColor() | pe.StrokeOnly()
-        ])
+for bars, slug, additional_color in zip(ax.containers,
+                                        ["circles-5", "circles-6", "concentric-circles-2"],
+                                        color_cycle):
 
-ax.legend(loc='upper left', ncols=3)
+    pattern = pm.get(slug, scale=2)
+    color_cycle = itertools.cycle([bars[0].get_fc(), additional_color])
+    pattern_fill = pattern.fill(ax, color_cycle, alpha=0.5)
+
+    path_effects = [Normal(), pattern_fill]
+    for patch in bars:
+        patch.set_path_effects(path_effects)
+
+ax.legend(loc='upper left', ncols=3,
+          handleheight=3., handlelength=3.)
 plt.show()
 
