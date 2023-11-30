@@ -1,10 +1,19 @@
+"""
+====================
+Bar chart example
+====================
+
+A bar chart with patterns
+
+"""
 
 import matplotlib.pyplot as plt
 from matplotlib.patheffects import Normal
 import numpy as np
 from mpl_pe_pattern_monster import PatternMonster
 
-# 
+# Adopted from https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html
+
 species = ("Adelie", "Chinstrap", "Gentoo")
 penguin_means = {
     'Bill Depth': (18.35, 18.43, 14.98),
@@ -29,6 +38,8 @@ ax.set_ylabel('Length (mm)')
 ax.set_title('Penguin attributes by species')
 ax.set_xticks(x + width, species)
 ax.set_ylim(0, 250)
+
+# Now we add patterns
 
 import itertools
 color_cycle = itertools.cycle(["#805AD5", "#E91E63", "#03A9F4", "#ECC94B"])
