@@ -1,3 +1,11 @@
+"""This reads in the file "_index.js", which contains svg definitions of
+patterns, and convert it to numpy array corresponding to vertices and codes for
+matplotlib's path object.
+
+This is only required for development, users will just use npy version of the
+converted paths.
+"""
+
 import json
 import xml.etree.ElementTree as ET
 import cairosvg
@@ -151,8 +159,8 @@ def main():
 
     # For a single case of "scales-3", picosvg failed to clip the path with
     # viewBox. For such cases, it now saves the svg file with a rect spanning
-    # the viewBox added. You can clip the file manually. For example, ppen the
-    # file in inkscape (for example), select all path, and do intersection.
+    # the viewBox added. You can clip the file manually. For example, open the
+    # file in inkscape, select all path, and do intersection.
     # Then, save the result and provide the name of the files in the dictionary
     # of slug_converted.
 

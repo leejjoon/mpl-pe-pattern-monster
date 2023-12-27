@@ -1,3 +1,5 @@
+import pkg_resources
+
 import numpy as np
 import json
 from matplotlib.path import Path
@@ -6,8 +8,8 @@ import matplotlib.colors as mcolors
 from matplotlib.backend_bases import RendererBase
 
 from matplotlib.artist import Artist
-from mpl_visual_context.transform_helper import TR
 from mpl_visual_context.patheffects_base  import AbstractPathEffect
+from mpl_visual_context.transform_helper import TR
 
 DEFAULT_COLOR_CYCLE = [f"C{i}" for i in range(10)]
 
@@ -21,6 +23,8 @@ class FillPattern(AbstractPathEffect):
 
         Keyword Arguments:
 
+        color_cycle: list of colors. None has special meansing that it will be replaced by
+                     the facecolor of the parent artist.
         alpha: alpha value for the pattern. If None, the alpha value from the parent artist
                will be used.
         """
@@ -34,7 +38,9 @@ class FillPattern(AbstractPathEffect):
         bbox = tpath.get_extents(affine)
         self.pb.set_bbox(bbox)
         self.pb.set_clip_path(tpath, transform=affine)
+        # FIXME This is inconsistent for now that alpha is from gc, fc is from rgbFace.
         self.pb.set_alpha(gc.get_alpha() if self._alpha is None else self._alpha)
+        self.pb.set_none_color(rgbFace)
         self.pb.draw(renderer)
         # FIXME we may better recover the clip_path?
 
@@ -99,6 +105,14 @@ class PatternBox(Artist):
             self.set_clip_path(axes.patch)
 
         self.color_cycle = self.default_color_cycle if color_cycle is None else color_cycle
+        self._none_color = None  # none color need to be set explicitly if
+                                 # needed. It is set by FillPattern instance.
+
+    def get_none_color(self):
+        return self._none_color
+
+    def set_none_color(self, rgb):
+        self._none_color = rgb
 
     def draw(self, renderer):
         if not self.get_visible():
@@ -126,6 +140,9 @@ class PatternBox(Artist):
         offsets = [(x0+w*ix, y0+h*iy) for ix in range(nx) for iy in range(ny)]
         for p, fc in zip(self.pattern.pathlist, self.color_cycle):
 
+            if fc is None:
+                fc = self.get_none_color()
+
             rgb = mcolors.to_rgb(fc)
 
             # FIXME: for now, the pattern will be drawn in the pixel
@@ -152,8 +169,6 @@ class PatternBox(Artist):
 
 class PatternMonster:
     def __init__(self):
-
-        import pkg_resources
 
         fn_json = pkg_resources.resource_filename('mpl_pe_pattern_monster',
                                                   'pattern_monster_wo_path.json')
